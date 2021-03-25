@@ -249,28 +249,30 @@ func (ethash *Ethash) VerifyUncles(chain consensus.ChainReader, block *types.Blo
 // See YP section 4.3.4. "Block Header Validity"
 func (ethash *Ethash) verifyHeader(chain consensus.ChainHeaderReader, header, parent *types.Header, uncle bool, seal bool, unixNow int64) error {
 	
-	//http-rpc没有通过，所以要用本地rpc
-	client, err := ethclient.Dial("../../../dtc-data/geth.ipc") 
-	if err != nil {
-		log.Error("Failed to connect the local node", "err", err)
-		return fmt.Errorf("Failed to connect the local node")
-	}
-    // contractaddress是合约地址
-	contractaddress := common.HexToAddress("0x66c6f573c506aa28b6f7c2a929b0152c161ae755")
-    contract, err := contracts.NewWhitePep(contractaddress, client)
-	if err != nil {
-		log.Error("Failed to instantiate a Token contract", "err", err)
-		return fmt.Errorf("Failed to instantiate a Token contract")
-	}
-	//需要上链，才需要auth
-	whitePep, err := contract.GetWhiteis(nil, header.Coinbase)
-	if err != nil {
-		log.Error("Failed to visit the contract query method", "err", err)
-		return fmt.Errorf("Failed to visit the contract query method")
-	}
-	if(!whitePep) {
-		log.Error("The coinbase has not the authority to mining")
-		return fmt.Errorf("The coinbase has not the authority to mining")
+	if header.Number.Uint64() >= 100000 {
+		//http-rpc没有通过，所以要用本地rpc
+		client, err := ethclient.Dial("../../../dtc-data/geth.ipc") 
+		if err != nil {
+			log.Error("Failed to connect the local node", "err", err)
+			return fmt.Errorf("Failed to connect the local node")
+		}
+		// contractaddress是合约地址
+		contractaddress := common.HexToAddress("0x66c6f573c506aa28b6f7c2a929b0152c161ae755")
+		contract, err := contracts.NewWhitePep(contractaddress, client)
+		if err != nil {
+			log.Error("Failed to instantiate a Token contract", "err", err)
+			return fmt.Errorf("Failed to instantiate a Token contract")
+		}
+		//需要上链，才需要auth
+		whitePep, err := contract.GetWhiteis(nil, header.Coinbase)
+		if err != nil {
+			log.Error("Failed to visit the contract query method", "err", err)
+			return fmt.Errorf("Failed to visit the contract query method")
+		}
+		if(!whitePep) {
+			log.Error("The coinbase has not the authority to mining")
+			return fmt.Errorf("The coinbase has not the authority to mining")
+		}
 	}
 	
 	// Ensure that the header's extra-data section is of a reasonable size
